@@ -24,6 +24,19 @@ class LearnJsapi4App {
 
     this.mapView = this.viewFactory(MapView, "mapDiv");
     this.sceneView = this.viewFactory(SceneView, "sceneDiv");
+
+    this.mapView.when(() => {
+      this.zoomToExtent(this.mapView);
+      this.addWidgets(this.mapView);
+    });
+    this.sceneView.when(() => {
+      this.zoomToExtent(this.sceneView);
+      this.addWidgets(this.sceneView);
+      this.syncCenterPointScene2Map();
+    });
+  }
+
+  private syncCenterPointScene2Map() {
     let firsttime = true;
     this.sceneView.watch("stationary", (s: boolean) => {
       if (s && firsttime) {
@@ -32,6 +45,16 @@ class LearnJsapi4App {
           this.mapView.center = c;
         });
       }
+    });
+  }
+
+  private async zoomToExtent(view: MapView | SceneView) {
+    const result = await this.weinLayer.queryExtent(this.weinQuery);
+
+    view.goTo(result.extent, {
+      animate: true,
+      duration: 10000,
+      easing: "ease-out"
     });
   }
 
@@ -47,18 +70,6 @@ class LearnJsapi4App {
       container: containerDiv,
       center: [-118.244, 34.052],
       zoom: 3
-    });
-
-    this.addWidgets(initView);
-
-    initView.when(() => {
-      this.weinLayer.queryExtent(this.weinQuery).then((result: any) => {
-        initView.goTo(result.extent, {
-          animate: true,
-          duration: 10000,
-          easing: "ease-out"
-        });
-      });
     });
     return initView;
   }
@@ -107,12 +118,10 @@ class LearnJsapi4App {
       index: 0
     });
 
-    var featureCountWidget = new FeatureCountWidget({
-      view: view
-    });
+    var featureCountWidget = new FeatureCountWidget(view);
     view.ui.add(featureCountWidget, {
       position: "top-right",
-      index: 0
+      index: 1
     });
   }
 

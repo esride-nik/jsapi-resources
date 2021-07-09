@@ -8,6 +8,7 @@ import SceneView from "esri/views/SceneView";
 import MapView from "esri/views/MapView";
 import LayerView from "esri/views/layers/LayerView";
 import FeatureLayerView from "esri/views/layers/FeatureLayerView";
+import { Extent } from "esri/geometry";
 
 const CSS = {
     base: "esri-widget",
@@ -20,6 +21,17 @@ class FeatureCountWidget extends declared(Widget) {
     constructor(view: View) {
         super();
         this.view = view;
+
+        if (this.view.type == "2d") {
+            let mapView = this.view as MapView;
+            this.countFeatures(mapView.extent);
+            mapView.watch("extent", this.countFeatures);
+        }
+        else if (this.view.type == "3d") {
+            let sceneView = this.view as SceneView;
+            this.countFeatures(sceneView.extent);
+            sceneView.watch("extent", this.countFeatures);
+        }
     }
 
     @property()
@@ -30,14 +42,19 @@ class FeatureCountWidget extends declared(Widget) {
     @renderable()
     emphasized: boolean = false;
 
+    @property()
+    @renderable()
+    featureCount: number = 0;
 
 
-    layerEvaluation() {
+    countFeatures = async (extent: Extent) => {
         const filtered = this.view.allLayerViews.filter((layerView: LayerView) => layerView.declaredClass.indexOf("FeatureLayerView") > -1);
         if (filtered.length > 0) {
             const flv = filtered.getItemAt(0) as FeatureLayerView;
-            // flv.queryExtent().then((flvResult: any) => console.log(flv.layer.id, flvResult.count));
-            flv.queryFeatureCount().then((flvResult: any) => console.log(flvResult));
+            const flvQuery = flv.createQuery();
+            flvQuery.geometry = extent;
+            const flvResult = await flv.queryFeatureCount(flvQuery);
+            this.featureCount = flvResult;
         };
     }
 
@@ -49,8 +66,7 @@ class FeatureCountWidget extends declared(Widget) {
 
         return (
             <div class={this.classes(CSS.base, CSS.specific, classes)}>
-                View size {this.view.height}*{this.view.width}<br />
-                {this.layerEvaluation()}
+                {this.featureCount}
             </div>
         );
     }

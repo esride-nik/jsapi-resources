@@ -7,6 +7,9 @@
     "jsx": "react",
     "jsxFactory": "tsx",
     "target": "es5",
+    "lib": [
+      "es2015"
+    ],
     "experimentalDecorators": true,
     "preserveConstEnums": true,
     "suppressImplicitAnyIndexErrors": true
